@@ -1,3 +1,5 @@
+venv/
+
 # Python's byte code
 *.pyc
 
@@ -13,12 +15,3 @@
 
 # Measurements
 measurements*.txt
-
-# DuckDB files
-*.ddb
-
-# Files for comparing results
-duckdb.txt
-polars.txt
-pypy.txt
-python.txt
