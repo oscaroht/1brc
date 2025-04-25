@@ -16,7 +16,8 @@ def process_chuck(start: int, end: int, filename: str):
             current_char += len(line)
             if current_char > end:
                 break
-            city, temperature_str = line.split(b';')
+            city_b, temperature_str = line.split(b';')
+            city = city_b.decode("utf-8")
             temperature = int(temperature_str.replace(b".", b""))
             city_results = results.get(city, None)
             if city_results is None:
@@ -39,7 +40,7 @@ def main(max_cpu=6):
 
     file_size = os.path.getsize(filename)
     chunk_size = file_size // cpu_count
-    print(f"Reading file {filename} of size {file_size}b")
+    print(f"File {filename} of size {file_size}b")
 
     start = 0
     end_position = 0
@@ -52,15 +53,32 @@ def main(max_cpu=6):
                 f.seek(end_position)
                 end_position += 1
             process_chunk_args.append((start, end_position, filename))
-            start = end_position + 1
+            start = end_position
     with mp.Pool(cpu_count) as p:
         chunk_results = p.starmap(
             process_chuck,
             process_chunk_args,
         )       
-    print(chunk_results)        
+
+    print("Reduce result")   
+    
+    combined_result = {}
+    for result in chunk_results:
+        for city, score in result.items():
+            if city not in combined_result:
+                combined_result[city] = score
+            else:
+                current_score = combined_result[city]
+                combined_result[city][0] = min(current_score[0], score[0])  # update the minumun temperature
+                combined_result[city][1] += score[0]
+                combined_result[city][2] = max(current_score[2], score[2])
+                combined_result[city][3] += score[3]
+    
+    print({city: [score[0]/10, (score[1]/score[3])/10, score[2]/10] for city, score in combined_result.items() })
 
 
 if __name__ == '__main__':
     from timeit import timeit
-    print(timeit(main, number=1))
+    time = timeit(main, number=1)
+    print("************ Time ******************")
+    print(time)
